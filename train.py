@@ -9,7 +9,11 @@ from tensorflow.contrib.rnn.python.ops import core_rnn_cell
 from tensorflow.python.ops import rnn_cell_impl
 
 from utils import createVocabulary, loadVocabulary, computeF1Score, DataProcessor
+
 random.seed(0)
+tf.set_random_seed(20181226)  
+np.random.seed(20181226)
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -97,6 +101,7 @@ def createModel(input_data, input_size, sequence_length, slots, slot_size, inten
         cell_bw = tf.contrib.rnn.DropoutWrapper(cell_bw, input_keep_prob=0.5,
                                                 output_keep_prob=0.5)
     if arg.embedding_path:
+        print("Loading embedding with numpy!")
         embedding_weight = np.load(arg.embedding_path)
         embedding = tf.Variable(embedding_weight, name='embedding', dtype=tf.float32)
     else:
@@ -345,6 +350,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         feed_dict = {input_data.name: in_data, slots.name: slot_data, slot_weights.name: slot_weight,
                      sequence_length.name: length, intent.name: intents}
         ret = sess.run(training_outputs, feed_dict)
+        #print(feed_dict)
         loss += np.mean(ret[1])
 
         line += arg.batch_size
@@ -365,7 +371,6 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
             save_path = os.path.join(arg.model_path, '_step_' + str(step) + '_epochs_' + str(epochs) + '.ckpt')
             saver.save(sess, save_path)
-
 
             def valid(in_path, slot_path, intent_path):
                 data_processor_valid = DataProcessor(in_path, slot_path, intent_path, in_vocab, slot_vocab,
@@ -433,13 +438,28 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
                 semantic_acc = np.mean(semantic_acc) * 100.0
 
                 f1, precision, recall = computeF1Score(correct_slots, slot_outputs)
+                if "test" in in_path:
+                    print("save result_intent.ou")
+                    with open("result_intent", "w") as outfile:
+                        for true, pred in zip(correct_intents, pred_intents):
+                            outfile.write("{} {}\n".format(true, pred))
+
+                    print("save result_slot.out")
+                    with open(in_path) as infile:
+                        data = infile.readlines()
+                        lines = [line.split() for line in data]
+                        with open("result_slot.out", "w") as outfile:
+                            print(len(lines), len(correct_slots), len(slot_outputs))
+                            for i in range(len(lines)):
+                                for w, true, pred in zip(lines[i], correct_slots[i], slot_outputs[i]):
+                                    outfile.write("{} {} {}\n".format(w, true, pred))
+                                outfile.write("\n")
                 logging.info('slot f1: ' + str(f1))
                 logging.info('intent accuracy: ' + str(accuracy))
                 logging.info('semantic Acc(intent, slots are all correct): ' + str(semantic_acc))
 
                 data_processor_valid.close()
                 return f1, accuracy, semantic_acc, pred_intents, correct_intents, slot_outputs, correct_slots, input_words, gate_seq
-
 
             logging.info('Valid:')
             epoch_valid_slot, epoch_valid_intent, epoch_valid_err, valid_pred_intent, valid_correct_intent, valid_pred_slot, valid_correct_slot, valid_words, valid_gate = valid(

@@ -284,7 +284,7 @@ class DataProcessor(object):
 
         length = np.array(length)
         intents = np.array(intents)
-        # print(max_len)
+        # print("max_len", max_len)
         # print('A'*20)
         for i, s in zip(batch_in, batch_slot):
             in_data.append(padSentence(list(i), max_len, self.__in_vocab))
@@ -292,9 +292,9 @@ class DataProcessor(object):
             # print(s)
         in_data = np.array(in_data)
         slot_data = np.array(slot_data)
-        # print(in_data)
-        # print(slot_data)
-        # print(type(slot_data))
+        #print("in_data", in_data, in_data.shape)
+        #print("slot_data", slot_data, slot_data.shape)
+        #print(type(slot_data))
         for s in slot_data:
             weight = np.not_equal(s, np.zeros(s.shape))
             weight = weight.astype(np.float32)
@@ -306,7 +306,7 @@ class DataProcessor(object):
 # def load_embedding(embedding_path):
 #     return np.load(embedding_path)
 
-def load_embedding(embedding_path):
+def load_embedding(embedding_path, embedd_dim=100):
     """
     load word embeddings from file
     :param embedding:
@@ -320,14 +320,16 @@ def load_embedding(embedding_path):
             line = line.strip()
             if len(line) == 0:
                 continue
-                tokens = line.split()
-                if embedd_dim < 0:
-                    embedd_dim = len(tokens) - 1 #BECAUSE THE ZEROTH INDEX IS OCCUPIED BY THE WORD
-                else:
-                    assert (embedd_dim + 1 == len(tokens))
-                embedd = np.empty([1, embedd_dim], dtype=np.float64)
-                embedd[:] = tokens[1:]
-                embedd_dict[tokens[0]] = embedd
+            tokens = line.split()
+            if embedd_dim < 0:
+                embedd_dim = len(tokens) - 1 #BECAUSE THE ZEROTH INDEX IS OCCUPIED BY THE WORD
+            else:
+                assert (embedd_dim + 1 == len(tokens))
+            embedd = np.empty([1, embedd_dim], dtype=np.float64)
+            embedd[:] = tokens[1:]
+            embedd_dict[tokens[0]] = embedd
+
+        np.save('glove_embeddings.npy', embedd_dict)  
         return embedd_dict
 
 def build_embedd_table(word_alphabet, embedd_dict, embedd_dim=100, caseless=True):
@@ -341,3 +343,20 @@ def build_embedd_table(word_alphabet, embedd_dict, embedd_dim=100, caseless=True
         embedd = embedd_dict[ww] if ww in embedd_dict else np.random.uniform(-scale, scale, [1, embedd_dim])
         embedd_table[index, :] = embedd
     return embedd_table
+
+if __name__ == "__main__":
+    in_vocab = loadVocabulary("./vocab/in_vocab")
+    slot_vocab = loadVocabulary("./vocab/slot_vocab")
+    intent_vocab = loadVocabulary("./vocab/intent_vocab")
+    
+    #print(in_vocab['vocab'].items())
+    id2word = {y:x for x,y in in_vocab['vocab'].items()}
+    print([id2word[id] for id in [20, 71, 2 ,38,  3, 24,  2, 23, 53, 48]])
+    data = DataProcessor(
+        "./data/atis/train/seq.in", 
+        "./data/atis/train/seq.out", 
+        "./data/atis/train/label",
+        in_vocab, 
+        slot_vocab,
+        intent_vocab)
+    print(data.get_batch(batch_size=1))
