@@ -520,6 +520,8 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
                 f1, precision, recall = computeF1Score(correct_slots, slot_outputs)
                 logging.info('slot f1: ' + str(f1))
+                logging.info('slot precision: ' + str(precision))
+                logging.info('slot recall: ' + str(recall))
                 logging.info('intent accuracy: ' + str(accuracy))
                 logging.info('semantic Acc(intent, slots are all correct): ' + str(semantic_acc))
 

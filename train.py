@@ -1,3 +1,4 @@
+import random
 import os
 import argparse
 import logging
@@ -8,7 +9,7 @@ from tensorflow.contrib.rnn.python.ops import core_rnn_cell
 from tensorflow.python.ops import rnn_cell_impl
 
 from utils import createVocabulary, loadVocabulary, computeF1Score, DataProcessor
-
+random.seed(0)
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
