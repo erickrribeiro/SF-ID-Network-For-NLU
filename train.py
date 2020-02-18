@@ -439,16 +439,16 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
                 f1, precision, recall = computeF1Score(correct_slots, slot_outputs)
                 if "test" in in_path:
-                    print("save result_intent.ou")
-                    with open("result_intent", "w") as outfile:
+                    print("save result_intent.out")
+                    with open(str(epochs)+"intent.out", "w") as outfile:
                         for true, pred in zip(correct_intents, pred_intents):
                             outfile.write("{} {}\n".format(true, pred))
 
-                    print("save result_slot.out")
+                    print("save slot.out")
                     with open(in_path) as infile:
                         data = infile.readlines()
                         lines = [line.split() for line in data]
-                        with open("result_slot.out", "w") as outfile:
+                        with open(str(epochs)+"-slot.out", "w") as outfile:
                             print(len(lines), len(correct_slots), len(slot_outputs))
                             for i in range(len(lines)):
                                 for w, true, pred in zip(lines[i], correct_slots[i], slot_outputs[i]):
@@ -488,4 +488,5 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
             if arg.early_stop == True:
                 if no_improve > arg.patience:
+                    print('break because early stop')
                     break
